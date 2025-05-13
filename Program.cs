@@ -2,42 +2,37 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Speech.Synthesis;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ChatBot3
 {
     class Program
     {
-        // Text-to-speech synthesizer
         static SpeechSynthesizer synthesizer = new SpeechSynthesizer();
-
-        // Stores the user's name
         static string userName = "";
 
         static void Main(string[] args)
         {
-            ConfigureVoice();      // Set up the bot's voice
-            DisplayAsciiImage();    // Display a welcoming ASCII art
-            IntroduceChatbot();     // Friendly introduction
-            GetUserName();          // Ask for user's name
-            ChatLoop();             // Start the chat loop
+            ConfigureVoice();
+            DisplayAsciiImage();
+            IntroduceChatbot();
+            GetUserName();
+            ChatLoop();
         }
 
         static void ConfigureVoice()
         {
             try
             {
-                synthesizer.SelectVoice("Microsoft Hazel"); // Attempt to set voice to 'Hazel'
+                synthesizer.SelectVoice("Microsoft Hazel");
             }
             catch (Exception)
             {
-                synthesizer.SelectVoiceByHints(VoiceGender.Female); // Default to a female voice if 'Hazel' is unavailable
+                synthesizer.SelectVoiceByHints(VoiceGender.Female);
             }
 
-            synthesizer.Rate = 1;    // Normal speech rate
-            synthesizer.Volume = 100; // Maximum volume
+            synthesizer.Rate = 1;
+            synthesizer.Volume = 100;
         }
 
         static void DisplayAsciiImage()
@@ -56,7 +51,7 @@ namespace ChatBot3
  |_______________|                 __/ |           _         | |                   (\o/)
     _|________|_                  |___/          _( )_       |_|            _      (/|\)    
    / ********** \                               (_ o _)                   _( )_     
- /  ************  \             (\o/)            (_,_)                   (_ o _)
+ /  ************  \             (\o/)            (_,_)                   (_,_)
 --------------------            (/|\)                                     (_,_)
        ";
             Console.WriteLine(asciiArt);
@@ -93,7 +88,7 @@ namespace ChatBot3
 
             if (string.IsNullOrWhiteSpace(userName))
             {
-                userName = "CyberStar"; // Default name if none provided
+                userName = "CyberStar";
             }
 
             TypeText($"\nNice to meet you, {userName}! How can I assist you today?");
@@ -153,67 +148,117 @@ namespace ChatBot3
         static void RespondToInput(string input)
         {
             string response;
-            // This switch block is the brain of the bot where it tries to understand what you are asking.
-            switch (true)
+            string lowerInput = input.ToLower();
+
+            // Definitions per topic
+            Dictionary<string, string> definitions = new Dictionary<string, string>
             {
-                case bool _ when input.Contains("how are you"):
-                    response = "I'm just a friendly bot, running smoothly and ready to help you! ";
-                    break;
+                { "phishing", "Phishing is a type of cyber attack where scammers trick you into giving away personal information, often through fake emails or websites." },
+                { "vpn", "A VPN, or Virtual Private Network, encrypts your internet connection and masks your IP address to protect your privacy online." },
+                { "malware", "Malware is malicious software designed to harm or exploit computers and networks." },
+                { "firewall", "A firewall is a security system that monitors and controls incoming and outgoing network traffic based on security rules." },
+                { "ransomware", "Ransomware is malware that locks or encrypts your data and demands payment to restore access." },
+                { "mfa", "Multi-Factor Authentication (MFA) is a security system that requires more than one method of authentication to access an account." },
+                { "encryption", "Encryption is the process of converting information into a code to prevent unauthorized access." },
+                { "social engineering", "Social engineering is the use of manipulation to trick people into giving away confidential information." },
+                { "password", "A password is a string of characters used to verify a user’s identity. Strong passwords are unique and hard to guess." },
+                { "privacy", "Privacy refers to your ability to control how your personal information is collected and used online." },
+                { "scam", "A scam is a dishonest scheme or fraud, often used to steal money or personal information." }
+            };
 
-                case bool _ when input.Contains("purpose"):
-                    response = "I'm here to help you stay safe online by providing reliable cybersecurity advice.";
-                    break;
+            // Tips per topic
+            Dictionary<string, List<string>> tipLists = new Dictionary<string, List<string>>
+            {
+                { "phishing", new List<string> {
+                    "Be cautious of emails asking for personal information. Scammers often disguise themselves as trusted organizations.",
+                    "Never click on suspicious links. Hover over them first to inspect the actual destination.",
+                    "Look for typos or urgent language in emails — these are common signs of phishing attempts."
+                }},
+                { "vpn", new List<string> {
+                    "Use a reputable VPN to secure your internet traffic, especially on public Wi-Fi.",
+                    "Avoid free VPNs that may log your data or slow down your connection.",
+                    "Always keep your VPN software updated for the latest security patches."
+                }},
+                { "malware", new List<string> {
+                    "Install and regularly update antivirus software to detect malware early.",
+                    "Don’t download files or software from untrusted websites.",
+                    "Avoid clicking on suspicious links in emails or pop-up ads."
+                }},
+                { "firewall", new List<string> {
+                    "Enable your device’s firewall to block unauthorized network access.",
+                    "Configure firewall settings to allow only trusted apps.",
+                    "Firewalls are especially useful when using public or untrusted networks."
+                }},
+                { "ransomware", new List<string> {
+                    "Back up your files regularly to an offline location.",
+                    "Do not click on suspicious links or attachments.",
+                    "Keep your operating system and software up to date."
+                }},
+                { "mfa", new List<string> {
+                    "Enable MFA on all your important accounts for added protection.",
+                    "Use an authenticator app instead of SMS when possible.",
+                    "MFA can stop attackers even if they steal your password."
+                }},
+                { "encryption", new List<string> {
+                    "Encrypt sensitive files before uploading them to the cloud.",
+                    "Use encrypted messaging apps like Signal for private conversations.",
+                    "Enable full-disk encryption on your devices for better data protection."
+                }},
+                { "social engineering", new List<string> {
+                    "Never give out personal info to unknown callers or emailers.",
+                    "Verify identities before sharing sensitive data.",
+                    "If something feels off, it probably is — trust your instincts."
+                }},
+                { "password", new List<string> {
+                    "Use a mix of letters, numbers, and symbols in your passwords.",
+                    "Never reuse the same password across multiple sites.",
+                    "Consider using a password manager to keep track of strong passwords."
+                }},
+                { "privacy", new List<string> {
+                    "Review app permissions and revoke access to what you don’t use.",
+                    "Use privacy-focused browsers and search engines.",
+                    "Disable location tracking unless absolutely necessary."
+                }},
+                { "scam", new List<string> {
+                    "If it sounds too good to be true, it probably is.",
+                    "Never share financial details over the phone or email unless you're certain it's secure.",
+                    "Scammers often pressure you to act quickly — always take your time to verify."
+                }}
+            };
 
-                case bool _ when input.Contains("password"):
-                    response = "Use strong, unique passwords for each account. A password manager can help you keep track of them.";
-                    break;
+            // Check for definition vs tip
+            foreach (var topic in definitions.Keys)
+            {
+                if (lowerInput.Contains(topic))
+                {
+                    if (lowerInput.Contains("what is") || lowerInput.StartsWith("define"))
+                    {
+                        response = definitions[topic];
+                        goto RESPOND;
+                    }
 
-                case bool _ when input.Contains("phishing"):
-                    response = "Phishing attacks are attempts to trick you into giving away personal information. Be cautious with suspicious links or attachments.";
-                    break;
-
-                case bool _ when input.Contains("browsing") || input.Contains("safe browsing"):
-                    response = "Always keep your browser updated, avoid suspicious websites, and use privacy tools like VPNs and ad blockers.";
-                    break;
-
-                case bool _ when input.Contains("malware"):
-                    response = "Malware is harmful software that can damage your system. Always keep your antivirus software updated.";
-                    break;
-
-                case bool _ when input.Contains("firewall"):
-                    response = "A firewall helps protect your system by monitoring and filtering incoming and outgoing network traffic.";
-                    break;
-
-                case bool _ when input.Contains("encryption"):
-                    response = "Encryption secures your data by converting it into a code, making it unreadable without the proper key.";
-                    break;
-
-                case bool _ when input.Contains("social engineering"):
-                    response = "Social engineering is manipulating people into revealing confidential information. Always verify identities before sharing sensitive details.";
-                    break;
-
-                case bool _ when input.Contains("vpn"):
-                    response = "A VPN protects your privacy by encrypting your internet connection and masking your IP address.";
-                    break;
-
-
-                case bool _ when input.Contains("multi-factor") || input.Contains("mfa"):
-                    response = "MFA adds an extra layer of security by requiring two or more verification steps to access an account.";
-                    break;
-
-                case bool _ when input.Contains("ransomware"):
-                    response = "Ransomware encrypts your files and demands payment for their release. Always back up your data and avoid clicking on suspicious links.";
-                    break;
-
-                default:
-                    response = "I'm sorry, I don't have information on that topic. Please ask another question.";
-                    break;
+                    if (tipLists.ContainsKey(topic))
+                    {
+                        response = GetRandomResponse(tipLists[topic]);
+                        goto RESPOND;
+                    }
+                }
             }
+
+            response = "I'm sorry, I don't have information on that topic. Please ask another question.";
+
+        RESPOND:
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.Write("CyberSpark: ");
             TypeText(response);
             Speak(response);
             Console.ResetColor();
+        }
+
+        static string GetRandomResponse(List<string> responses)
+        {
+            Random rand = new Random();
+            return responses[rand.Next(responses.Count)];
         }
 
         static void TypeText(string text, int delay = 20)
